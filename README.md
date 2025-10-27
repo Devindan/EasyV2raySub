@@ -82,7 +82,7 @@ link**.
 # How it works?
 
 This project uses simple regex (you can also add your own) to match links with the protocol
-prefixes `vmess://`, `vless://` and `ss://` from a specific website.
+prefixes `hysteria2`, `vmess://`, `vless://` and `ss://` from a specific website.
 
 Once the links are extracted, they are written into the `links.txt` file in the format specified
 by [2dust/v2rayN](https://github.com/2dust/v2rayN/wiki/%E8%AE%A2%E9%98%85%E5%8A%9F%E8%83%BD%E8%AF%B4%E6%98%8E), which

@@ -6,7 +6,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-default_regex = r'(?<=\s)(v[ml]e)?ss://\S+(?=\s)'
+default_regex = r'(?<=\s)((v[ml]e)?ss|hysteria2)://\S+(?=\s)'
 domain_regex = r'([a-zA-Z\d][a-zA-Z\d\-]{1,62}\.){1,3}[a-zA-Z]{2,63}'
 request_headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36'
@@ -18,8 +18,8 @@ def parse_args():
     parser.add_argument('-u', '--urls',
                         required=True,
                         nargs='+',
-                        help='One or more websites that contain links with the protocol prefixes "vmess://", '
-                             '"vless://", and "ss://".')
+                        help='One or more websites that contain links with the protocol prefixes "hysteria2", '
+                             '"vmess://", "vless://", and "ss://".')
     parser.add_argument('-ar', '--additional-regex',
                         required=False,
                         help='Add more regex patterns to match links (optional).')

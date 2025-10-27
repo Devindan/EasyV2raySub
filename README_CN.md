@@ -78,7 +78,7 @@ python generate.py -h
 
 # 原理
 
-这个项目使用了简单的正则表达式（你也可以添加自己的）来匹配指定网页中，带有`vmess://`、`vless://`和`ss://`协议头的链接。
+这个项目使用了简单的正则表达式（你也可以添加自己的）来匹配指定网页中，带有`hysteria2`、`vmess://`、`vless://`和`ss://`协议头的链接。
 
 当链接被提取出来后，这些链接将会以[2dust/v2rayN](https://github.com/2dust/v2rayN/wiki/%E8%AE%A2%E9%98%85%E5%8A%9F%E8%83%BD%E8%AF%B4%E6%98%8E)
 中定义的格式写入`links.txt`文件，即：
