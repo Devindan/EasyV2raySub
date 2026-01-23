@@ -1,0 +1,47 @@
+name: Generate V2Ray Links
+
+on:
+  schedule:
+    - cron: '0 */2 * * *' # Every 2 hours
+  workflow_dispatch:
+
+jobs:
+  generate-links:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests>=2.32.3 beautifulsoup4>=4.12.3
+
+      - name: Run generate.py
+        run: python generate.py --url https://raw.githubusercontent.com/free-nodes/v2rayfree/refs/heads/main/README.md -o links3.txt
+
+      - name: Check for file changes
+        id: check_changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes detected."
+            echo "has_changes=false" >> $GITHUB_ENV
+          else
+            echo "Changes detected."
+            echo "has_changes=true" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push updated links
+        if: env.has_changes == 'true'
+        run: |
+          git config --local user.name "GitHub Actions Bot"
+          git config --local user.email "<>"
+          git add links3.txt
+          git commit -m "Update links3.txt"
+          git push
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
