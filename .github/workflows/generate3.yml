@@ -1,4 +1,4 @@
-name: Generate V2Ray Links
+name: Generate V2Ray Links 3
 
 on:
   schedule:
