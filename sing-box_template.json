@@ -1,0 +1,71 @@
+{
+  "$schema": "https://sing-box.sagernet.org/schema.json",
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "local",
+        "tag": "local"
+      },
+      {
+        "type": "tls",
+        "tag": "remote",
+        "server": "8.8.8.8",
+        "server_port": 853,
+        "tls": {
+          "enabled": true,
+          "server_name": "dns.google"
+        },
+        "detour": "proxy"
+      }
+    ],
+    "final": "remote",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "address": [
+        "172.19.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+      "mtu": 9000,
+      "dns_mode": "hijack",
+      "auto_route": true,
+      "exclude_package": [
+        "io.nekohasekai.sfa"
+      ],
+      "stack": "gvisor"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "network": "udp",
+        "port": 443,
+        "action": "reject",
+        "method": "default"
+      },
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
+      }
+    ],
+    "final": "proxy",
+    "default_domain_resolver": "local"
+  }
+}
