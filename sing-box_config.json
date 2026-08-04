@@ -1,0 +1,138 @@
+{
+  "$schema": "https://sing-box.sagernet.org/schema.json",
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "local",
+        "tag": "local"
+      },
+      {
+        "type": "tls",
+        "tag": "remote",
+        "server": "8.8.8.8",
+        "server_port": 853,
+        "tls": {
+          "enabled": true,
+          "server_name": "dns.google"
+        },
+        "detour": "proxy"
+      }
+    ],
+    "final": "remote",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "address": [
+        "172.19.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+      "mtu": 9000,
+      "dns_mode": "hijack",
+      "auto_route": true,
+      "exclude_package": [
+        "io.nekohasekai.sfa"
+      ],
+      "stack": "gvisor"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "proxy",
+      "outbounds": [
+        "auto",
+        "VLESS",
+        "vmess-ws-ipv6",
+        "AnyTLS",
+        "SS-IPv6",
+        "direct"
+      ],
+      "default": "auto",
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [
+        "VLESS",
+        "vmess-ws-ipv6",
+        "AnyTLS",
+        "SS-IPv6"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "3m",
+      "tolerance": 50,
+      "idle_timeout": "30m",
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "vless",
+      "server": "2001:bc8:32d7:302::10",
+      "server_port": 65513,
+      "uuid": "2567e2e0-8d4c-4c51-aee9-5d1f36024472",
+      "tag": "VLESS"
+    },
+    {
+      "type": "vmess",
+      "server": "2001:bc8:32d7:1a9::2",
+      "server_port": 23388,
+      "uuid": "3a966d20-7b9d-48cc-ba2c-8d38161b6d3a",
+      "security": "auto",
+      "alter_id": 0,
+      "transport": {
+        "type": "ws",
+        "path": "/github.com/Alvin9999-newpac/fanqiang"
+      },
+      "tag": "vmess-ws-ipv6"
+    },
+    {
+      "type": "anytls",
+      "server": "ip4.934618.xyz",
+      "server_port": 51133,
+      "password": "github.com/Alvin9999-newpac/fanqiang",
+      "tls": {
+        "enabled": true
+      },
+      "tag": "AnyTLS"
+    },
+    {
+      "type": "shadowsocks",
+      "server": "2001:bc8:32d7:17b::100",
+      "server_port": 22222,
+      "method": "aes-256-gcm",
+      "password": "github.com/Alvin9999-newpac/fanqiang",
+      "tag": "SS-IPv6"
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "network": "udp",
+        "port": 443,
+        "action": "reject",
+        "method": "default"
+      },
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
+      }
+    ],
+    "final": "proxy",
+    "default_domain_resolver": "local"
+  }
+}
