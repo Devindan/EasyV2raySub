@@ -1,0 +1,86 @@
+name: Generate V2Ray Links
+
+on:
+  schedule:
+    - cron: '0 */2 * * *' # Every 2 hours
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-v2ray-links-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate-links:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Generate and publish subscriptions
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config --local user.name "GitHub Actions Bot"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+          branch="${GITHUB_REF_NAME}"
+          if [ -z "$branch" ]; then
+            echo "Unable to determine the current branch." >&2
+            exit 1
+          fi
+
+          max_attempts=5
+          for attempt in $(seq 1 "$max_attempts"); do
+            git fetch origin "+refs/heads/${branch}:refs/remotes/origin/${branch}"
+            remote_head="$(git rev-parse "origin/${branch}")"
+            git reset --hard "$remote_head"
+
+            python generate.py \
+              --url \
+              https://github.com/Alvin9999-newpac/fanqiang/wiki/v2ray%E5%85%8D%E8%B4%B9%E8%B4%A6%E5%8F%B7 \
+              https://github.com/Alvin9999-newpac/fanqiang/wiki/ss%E5%85%8D%E8%B4%B9%E8%B4%A6%E5%8F%B7 \
+              --output-file links.txt \
+              --singbox-template sing-box_template.json \
+              --singbox-output sing-box_config.json
+
+            git add links.txt sing-box_config.json
+            if git diff --cached --quiet; then
+              echo "No changes detected."
+              exit 0
+            fi
+
+            head_author="$(git log -1 --format=%an)"
+            head_subject="$(git log -1 --format=%s)"
+            if [ "$head_author" = "GitHub Actions Bot" ] && \
+               [ "$head_subject" = "Update generated subscriptions" ]; then
+              git commit --amend --no-edit
+            else
+              git commit -m "Update generated subscriptions"
+            fi
+
+            if git push \
+              --force-with-lease="refs/heads/${branch}:${remote_head}" \
+              origin "HEAD:${branch}"; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq "$max_attempts" ]; then
+              echo "Push failed after $max_attempts attempts." >&2
+              exit 1
+            fi
+
+            sleep $((attempt * 2))
+          done
