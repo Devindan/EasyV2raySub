@@ -2,7 +2,6 @@ import re
 import unittest
 from contextlib import redirect_stderr
 from io import StringIO
-from types import ModuleType
 from unittest.mock import patch
 
 from crawler import NoLinksError, crawl_links, extract_links
@@ -113,20 +112,75 @@ class ExtractLinksTests(unittest.TestCase):
             def raise_for_status(self):
                 raise RuntimeError("HTTP 503")
 
-        requests = ModuleType("requests")
-        requests.get = lambda url, timeout: Response()
-        bs4 = ModuleType("bs4")
-
-        class Soup:
-            def __init__(self, text, parser):
-                self.text = text
-
-            def get_text(self, separator):
-                return self.text
-
-        bs4.BeautifulSoup = Soup
-
-        with patch.dict("sys.modules", {"requests": requests, "bs4": bs4}):
+        with patch("crawler.requests.get", return_value=Response()):
             with redirect_stderr(StringIO()):
                 with self.assertRaises(NoLinksError):
                     crawl_links(["unavailable"])
+
+
+class CloudflareEmailTests(unittest.TestCase):
+    @staticmethod
+    def encode_cf_email(plain: str) -> str:
+        key = 0x7A
+        return (bytes([key]) + bytes(b ^ key for b in plain.encode())).hex()
+
+    def test_cf_email_decode_keeps_uri_in_one_line(self):
+        encoded = self.encode_cf_email("dongtaiwang.com@ip5.934618.xyz")
+        page = (
+            f'<div>anytls://<a class="__cf_email__" data-cfemail="{encoded}">'
+            f"[email&#160;protected]</a>:23550?security=tls&amp;sn=host#node</div>"
+        )
+
+        class Response:
+            text = page
+
+            def raise_for_status(self):
+                return None
+
+        with patch("crawler.requests.get", return_value=Response()):
+            links = crawl_links(["https://source.example/nodes"])
+
+        self.assertEqual(
+            links,
+            [
+                "anytls://dongtaiwang.com@ip5.934618.xyz"
+                ":23550?security=tls&sn=host#node"
+            ],
+        )
+
+    def test_links_separated_by_heavy_markup_are_not_merged(self):
+        page = (
+            "<div><p>标题段落</p><span>说明文字</span>"
+            "<table><tr><td>vmess://AAA</td></tr></table>"
+            "<p>中间还有很多无关内容 abc def ghi</p><ul><li>注释</li></ul>"
+            "<div><span>vless://BBB</span></div></div>"
+        )
+
+        class Response:
+            text = page
+
+            def raise_for_status(self):
+                return None
+
+        with patch("crawler.requests.get", return_value=Response()):
+            links = crawl_links(["https://source.example/nodes"])
+
+        self.assertEqual(links, ["vmess://AAA", "vless://BBB"])
+
+    def test_malformed_cf_email_does_not_drop_other_links(self):
+        page = (
+            '<div>vmess://AAA<a class="__cf_email__" data-cfemail="abc">x</a>'
+            "vless://BBB</div>"
+        )
+
+        class Response:
+            text = page
+
+            def raise_for_status(self):
+                return None
+
+        with redirect_stderr(StringIO()):
+            with patch("crawler.requests.get", return_value=Response()):
+                links = crawl_links(["https://source.example/nodes"])
+
+        self.assertEqual(links, ["vmess://AAA", "vless://BBB"])

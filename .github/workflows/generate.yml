@@ -50,8 +50,8 @@ jobs:
 
             python generate.py \
               --url \
-              https://github.com/Alvin9999-newpac/fanqiang/wiki/v2ray%E5%85%8D%E8%B4%B9%E8%B4%A6%E5%8F%B7 \
-              https://github.com/Alvin9999-newpac/fanqiang/wiki/ss%E5%85%8D%E8%B4%B9%E8%B4%A6%E5%8F%B7 \
+              https://alvin9999.com/v2ray%E5%85%8D%E8%B4%B9%E8%B4%A6%E5%8F%B7 \
+              https://alvin9999.com/ss%E5%85%8D%E8%B4%B9%E8%B4%A6%E5%8F%B7 \
               --output-file links.txt \
               --singbox-template sing-box_template.json \
               --singbox-output sing-box_config.json
